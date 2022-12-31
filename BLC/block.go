@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	BlockSize = 10  // transactions number
+	BlockSize = 10 // transactions number
 )
 
 type Block struct {
@@ -41,6 +41,7 @@ func (b *Block) GenHash() {
 
 func (b *Block) Serialize() ([]byte, error) {
 	var result bytes.Buffer
+	// gob.Register(elliptic.P256())
 	encoder := gob.NewEncoder(&result)
 	err := encoder.Encode(b)
 	if err != nil {

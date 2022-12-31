@@ -3,16 +3,12 @@ package BLC
 import (
 	"crypto/sha256"
 	"fmt"
-	"log"
 	"math/big"
-
-	"github.com/boltdb/bolt"
 )
 
 type Miner struct {
 	PubKey      string
 	unpackTrans []*Transaction
-	blockChain  *Blockchain
 }
 
 var Difficulty uint = 8
@@ -51,31 +47,25 @@ func (m *Miner) mineBlock() {
 	} else {
 		trans = m.unpackTrans[:len(m.unpackTrans)-1]
 	}
-	m.blockChain.AddBlock(trans, m.PubKey)
+	for _, tx := range trans {
+		if tx.Verify() {
+			panic("invalid transaction")
+		}
+	}
+	BlockChainIns.AddBlock(trans, m.PubKey)
 	m.unpackTrans = m.unpackTrans[len(trans):]
 }
 
-func (m *Miner) NewBlockchain() *Blockchain {
-	coinbase := CoinbaseTransaction("Genesis address")
-	db, err := bolt.Open(dbName, 0600, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
-		if b == nil {
-			_, err = tx.CreateBucket([]byte(bucket))
-			if err != nil {
-				return fmt.Errorf("create bucket: %s", err)
-			}
-		}
-		return nil
-	})
-	blockChain := &Blockchain{
-		lastBlockHash: []byte{},
-		db:            db,
-	}
-	blockChain.AddBlock([]*Transaction{coinbase}, m.PubKey)
-	m.blockChain = blockChain
-	return blockChain
+type MerkleTree struct {
+	Root *MerkleNode
+}
+
+type MerkleNode struct {
+	Hash  []byte
+	Left  *MerkleNode
+	Right *MerkleNode
+}
+
+func (m *Miner) MakeMerkleTree([]*Transaction) *MerkleTree {
+	return nil
 }
